@@ -13,22 +13,23 @@ def adaptive_threshold(img, type='adaptive', region=5):
 
 def _mean_thresholding(img):
     sum = 0
-    shape = img.shape
-    for row in range(0, shape[0]):
-        for col in range(0,shape[1]):
+    height, width = img.shape[0], img.shape[1]
+    for row in range(0, height):
+        for col in range(0, width):
             sum += img[row, col]
-    mean = sum/(shape[0]*shape[1])
+    mean = sum/(width*height)
     return threshold(img, mean)
 
 
 def threshold(img, mean):
-    new_img = np.zeros((img.shape[0], img.shape[1], 3), np.uint8)
-    for row in range(0,img.shape[0]):
-        for col in range(0,img.shape[1]):
+    height, width = img.shape[0], img.shape[1]
+    new_img = np.zeros((height, width, 3), np.uint8)
+    for row in range(0, height):
+        for col in range(0, width):
             if img[row, col] > mean:
                 new_img[row, col] = mean
             else:
-                new_img[row,col] = img[row, col]
+                new_img[row, col] = img[row, col]
     return new_img
 
 
