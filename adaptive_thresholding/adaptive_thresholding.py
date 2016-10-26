@@ -71,7 +71,7 @@ def _least_squares_thresholding(img):
     answer = np.array([b_1, b_2, b_3])
 
     unknowns  = np.linalg.solve(matrix, answer)
-    new_img = np.zeros((height, width, 3), np.uint8)
+    new_img = np.zeros((height, width, 1), np.uint8)
 
     for i in range(0, height):
         for j in range(0, width):
