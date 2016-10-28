@@ -25,7 +25,7 @@ def least_squares_circle(data):
         a_33 += data[i][0]
         a_34 += data[i][0] * data[i][1]
         a_44 += data[i][1]**2
-        b_1 +=  data[i][0]**2
+        b_1 += data[i][0]**2
         b_4 += data[i][1]
 
     a_21 = a_12
@@ -43,4 +43,4 @@ def least_squares_circle(data):
                        [a_41, a_42, a_43, a_44]])
     answer = np.array([b_1, b_2, b_3, b_4])
 
-    unknowns = np.linalg.solve(matrix, answer)
+    return np.linalg.solve(matrix, answer)
