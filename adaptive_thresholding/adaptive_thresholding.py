@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import math
 
 
 def adaptive_threshold(img, type='adaptive'):
@@ -8,7 +9,7 @@ def adaptive_threshold(img, type='adaptive'):
     elif type == 'adaptive':
         return _least_squares_thresholding(img)
     else:
-        print "Not a valid thresholding type"
+        print("Not a valid thresholding type")
 
 
 def _mean_thresholding(img):
@@ -26,10 +27,10 @@ def threshold(img, mean):
     new_img = np.zeros((height, width, 3), np.uint8)
     for row in range(0, height):
         for col in range(0, width):
-            if img[row, col] > mean:
-                new_img[row, col] = mean
+            if img[row, col] >= mean:
+                new_img[row, col] = 255
             else:
-                new_img[row, col] = img[row, col]
+                new_img[row, col] = 0
     return new_img
 
 
@@ -51,33 +52,36 @@ def _least_squares_thresholding(img):
     # i = row # , j = column #
     for i in range(0, height):
         a_12 += i + 1
-        a_22 += (i+1)**2
+        a_22 += math.pow(i + 1, 2)
     a_21 = a_12
 
     for j in range(0, width):
         a_13 += j + 1
-        a_33 += (j+1)**2
+        a_33 += math.pow(j + 1, 2)
     a_31 = a_13
 
     for i in range(0, height):
         for j in range(0, width):
-            a_23 += (i+1)*(j+1)
+            a_23 += (i + 1) * (j + 1)
             b_1 += img[i, j]
             b_2 += (i + 1) * img[i, j]
             b_3 += (j + 1) * img[i, j]
     a_32 = a_23
 
-    matrix = np.array([[a_11, a_12, a_13], [a_21, a_22, a_23], [a_31, a_32, a_33]])
-    answer = np.array([b_1, b_2, b_3])
+    matrix = np.array([[a_11, a_12, a_13], [a_21, int(a_22), a_23], [a_31, a_32, int(a_33)]])
+    answer = np.array([int(b_1), int(b_2), int(b_3)])
 
-    unknowns  = np.linalg.solve(matrix, answer)
-    new_img = np.zeros((height, width, 1), np.uint8)
-
+    unknowns = np.linalg.solve(matrix, answer)
+    fitted_img = np.zeros((height, width, 1), np.uint8)
+    final_img = np.zeros((height, width, 1), np.uint8)
     for i in range(0, height):
         for j in range(0, width):
-            new_img[i, j] = unknowns[0] + unknowns[1]*(i+1) + unknowns[2]*(j+1)
-
-    return new_img
+            fitted_img[i, j] = unknowns[0] + unknowns[1]*(i+1) + unknowns[2]*(j+1)
+            if img[i, j] >= fitted_img[i, j]:
+                final_img[i, j] = 255
+            else:
+                final_img[i, j] = 0
+    return final_img, fitted_img
 
 
 def main():
@@ -85,11 +89,12 @@ def main():
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    mean_image = adaptive_threshold(gray, type='adaptive')
+    mean_image, new_image = adaptive_threshold(gray, type='adaptive')
 
     # Display the resulting frame
     cv2.imshow("Gray", gray)
     cv2.imshow('Mean Image', mean_image)
+    cv2.imshow('Threshold Image', new_image)
     cv2.waitKey(0)
 
     cv2.destroyAllWindows()
