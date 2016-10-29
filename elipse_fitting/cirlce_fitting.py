@@ -1,14 +1,15 @@
 import cv2
 import numpy as np
 import math
+import random
 
 # initialize the list of reference points and boolean indicating
-    # whether cropping is being performed or not
+# whether cropping is being performed or not
 refPt = []
 
 
 def fit_circle(data):
-    """Use three data points and find the perpecicular bisector of two cords to find the equation of the circle"""
+    """Use three data points and find the equation of a circle that bests fits the points"""
 
     if len(data) != 3:
         print("Incorrect data input size, should be of length 3, was length " + str(len(data)))
@@ -28,6 +29,24 @@ def fit_circle(data):
         return -x_center, -y_center, radius
 
 
+def ransac_circle(data):
+    pass
+
+
+def count_nearest_points(data, x_center, y_center, radius):
+    points_near = 0
+    for point in data:
+        distance_from_center = math.sqrt((point[0] - x_center)**2 + (point[1] - y_center)**2)
+        if distance_from_center <= radius**2:
+            distance = abs(radius - distance_from_center)
+        else:
+            distance = abs(distance_from_center - radius)
+        if distance <= 5:
+            points_near += 1
+
+    return points_near
+
+
 def main():
 
     def click_point(event, x, y, flags, param):
@@ -41,15 +60,16 @@ def main():
             refPt.append((x, y))
             print("Added point {}, {} to the data set.".format(x, y))
             # draw a rectangle around the region of interest
-            cv2.circle(image, (x, y), 5, (0, 0, 255), -1)
+            cv2.circle(image, (x, y), 3, (0, 0, 255), -1)
             cv2.imshow("image", image)
-    fit_circle([(2, 1), (0, 5), (-1, 2)])
+
+    # x, y, r = fit_circle([(200, 55), (220, 56), (210, 66)])
 
     image = cv2.imread("../images/three_circles.png")
     clone = image.copy()
     cv2.namedWindow("image")
     cv2.setMouseCallback("image", click_point)
-
+    cv2.circle(image, (x, y), r, (0, 0, 255))
     cv2.imshow("image", image)
     cv2.waitKey(0)
 
