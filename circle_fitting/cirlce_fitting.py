@@ -11,14 +11,9 @@ refPt = set([])
 def fit_circle(data):
     """Use three data points and find the equation of a circle that bests fits the points"""
 
-    if len(data) > 3:
-        p = data[0]
-        q = data[(len(data))/2]
-        r = data[len(data)-1]
-    elif len(data) == 3:
-        p = data[0]
-        q = data[1]
-        r = data[2]
+    p = data[0]
+    q = data[1]
+    r = data[2]
 
     matrix = np.array([[p[0], p[1], 1], [q[0], q[1], 1], [r[0], r[1], 1]])
     answer = np.array([-(p[0]**2 + p[1]**2), -(q[0]**2 + q[1]**2), -(r[0]**2 + r[1]**2)])
@@ -48,13 +43,12 @@ def ransac_circle(data):
 
             if len(also_inliers) >= 6:
                 inliers = set_sample | also_inliers
-                better_x, better_y, better_r = fit_circle(list(inliers))
-                thiserr = count_nearest_points(inliers, better_x, better_y, better_r)
+                thiserr = count_nearest_points(inliers, x_centre, y_centre, radius)
 
                 if len(thiserr) > besterr:
-                    best = [int(better_x), int(better_y), int(better_r)]
+                    best = [int(x_centre), int(y_centre), int(radius)]
                     besterr = len(thiserr)
-                new_sample = thiserr
+                    new_sample = thiserr
         if len(new_sample) == 0:
             left_over = set([])
         else:
