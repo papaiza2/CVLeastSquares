@@ -11,11 +11,11 @@ refPt = set([])
 def fit_circle(data):
     """Use three data points and find the equation of a circle that bests fits the points"""
 
-    if len(data) != 3:
+    if len(data) > 3:
         p = data[0]
-        q = data[(len(data)-1)/2]
+        q = data[(len(data))/2]
         r = data[len(data)-1]
-    else:
+    elif len(data) == 3:
         p = data[0]
         q = data[1]
         r = data[2]
@@ -33,27 +33,35 @@ def fit_circle(data):
 
 def ransac_circle(data):
 
-    best_x = None
-    best_y = None
-    best_r = None
-    besterr = float('-inf')
-    for i in range(0, 200):
-        sample = random.sample(data, 3)
-        set_sample = set(sample)
-        x_centre, y_centre, radius = fit_circle(sample)
-        also_inliers = count_nearest_points(data - set(sample), x_centre, y_centre, radius)
+    best_fit = []
 
-        if len(also_inliers) >= 6:
-            new_sample = set_sample | also_inliers
-            better_x, better_y, better_r = fit_circle(list(new_sample))
-            thiserr = len(count_nearest_points(new_sample, better_x, better_y, better_r))
+    left_over = set(data)
+    while len(left_over) >= 3:
+        new_sample = set([])
+        best = None
+        besterr = float('-inf')
+        for i in range(0, 200):
+            sample = random.sample(left_over, 3)
+            set_sample = set(sample)
+            x_centre, y_centre, radius = fit_circle(sample)
+            also_inliers = count_nearest_points(left_over - set(sample), x_centre, y_centre, radius)
 
-            if thiserr > besterr:
-                best_x = better_x
-                best_y = better_y
-                best_r = better_r
-                besterr = thiserr
-    return int(best_x), int(best_y), int(best_r)
+            if len(also_inliers) >= 6:
+                inliers = set_sample | also_inliers
+                better_x, better_y, better_r = fit_circle(list(inliers))
+                thiserr = count_nearest_points(inliers, better_x, better_y, better_r)
+
+                if len(thiserr) > besterr:
+                    best = [int(better_x), int(better_y), int(better_r)]
+                    besterr = len(thiserr)
+                new_sample = thiserr
+        if len(new_sample) == 0:
+            left_over = set([])
+        else:
+            left_over = left_over - new_sample
+            best_fit.append(best)
+
+    return best_fit
 
 
 def count_nearest_points(data, x_centre, y_centre, radius):
@@ -92,12 +100,14 @@ def main():
     cv2.setMouseCallback("image", click_point)
     cv2.imshow("image", image)
     cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     if len(refPt) > 0:
         clone = image.copy()
-        best_x, best_y, best_r = ransac_circle(refPt)
+        best_fit = ransac_circle(refPt)
         cv2.namedWindow("image")
-        cv2.circle(clone, (best_x, best_y), best_r, (0, 0, 255))
+        for fit in best_fit:
+            cv2.circle(clone, (fit[0], fit[1]), fit[2], (0, 0, 255), 2)
         cv2.imshow("image", clone)
         cv2.waitKey(0)
 
