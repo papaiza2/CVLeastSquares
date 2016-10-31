@@ -1,7 +1,8 @@
-import cv2
-import numpy as np
 import math
 import random
+
+import cv2
+import numpy as np
 
 # initialize the list of reference points. This list will be populated by the points picked by the user
 refPt = set([])
@@ -24,6 +25,7 @@ def ransac_circle(data):
             sample = random.sample(left_over, 3)
             set_sample = set(sample)
             # Find best fit for the sample set
+            # x_centre, y_centre, radius = fit_circle(sample)
             x_centre, y_centre, radius = fit_circle(sample)
             # Check which points outside of the sample set fit into the circle model
             also_inliers = find_nearest_points(left_over - set(sample), x_centre, y_centre, radius)
@@ -89,6 +91,44 @@ def find_nearest_points(data, x_centre, y_centre, radius):
             points_near.add(point)
 
     return points_near
+
+
+def three_point_center(data):
+    """Picks three random points from a data set and returns the center"""
+
+    if len(data) < 3:
+        print('At least 3 points are needed for calculations.')
+        return
+
+    else:
+        shuffled = np.random.permutation(data)
+        a = shuffled[0]
+        b = shuffled[1]
+        c = shuffled[2]
+        x = int(a[0]) + int(a[1]) * 1j
+        y = int(b[0]) + int(b[1]) * 1j
+        z = int(c[0]) + int(c[1]) * 1j
+
+        w = z - x
+        w /= y - x
+        c = (x - y) * (w - abs(w) ** 2) / 2j / w.imag - x
+        xcen = -int(c.real)
+        ycen = -int(c.imag)
+        radius = int(abs(c + x))
+
+    return xcen, ycen, radius
+
+
+def points_in_range(xcen, ycen, radius, data, W):
+    """Returns the number of points within radius + or - W pixels of the center."""
+
+    center = np.array([xcen,ycen])
+    count = 0
+    for point in data:
+        if abs(np.linalg.norm(center-point)-radius)/W < 1:
+            count += 1
+
+    return count
 
 
 def main():
