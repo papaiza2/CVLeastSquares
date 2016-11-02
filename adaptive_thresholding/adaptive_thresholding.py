@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import math
 
 
 def adaptive_threshold(img, type='adaptive'):
@@ -46,46 +45,51 @@ def _least_squares_thresholding(img):
         """
 
     height, width = img.shape[0], img.shape[1]
-    a_11 = height * width
-    a_12 = a_13 = a_21 = a_22 = a_23 = a_31 = a_32 = a_33 = 0
-    b_1 = b_2 = b_3 = 0
-    # i = row # , j = column #
-    for i in range(0, height):
-        a_12 += i + 1
-        a_22 += math.pow(i + 1, 2)
-    a_21 = a_12
+    a_11 = float(height * width)
+    a_12 = a_13 = a_21 = a_22 = a_23 = a_31 = a_32 = a_33 = 0.0
+    b_1 = b_2 = b_3 = 0.0
+
+    a_21 = a_12 = float(height*(height + 1)/2) * width
+    a_22 = float(height * (height + 1) * (2*height + 1)/6) * width
+
+    a_31 = a_13 = float(width*(width + 1)/2) * height
+    a_33 = float(width * (width + 1) * (2*width + 1)/6) * height
 
     for j in range(0, width):
-        a_13 += j + 1
-        a_33 += math.pow(j + 1, 2)
-    a_31 = a_13
+        for i in range(0, height):
+            b_1 += float(img[i, j])
+            b_2 += float((i + 1) * img[i, j])
+            b_3 += float((j + 1) * img[i, j])
+    a_32 = a_23 = float((height*(height + 1)/2) * (width*(width + 1)/2))
 
-    for i in range(0, height):
-        for j in range(0, width):
-            a_23 += (i + 1) * (j + 1)
-            b_1 += img[i, j]
-            b_2 += (i + 1) * img[i, j]
-            b_3 += (j + 1) * img[i, j]
-    a_32 = a_23
-
-    matrix = np.array([[a_11, a_12, a_13], [a_21, int(a_22), a_23], [a_31, a_32, int(a_33)]])
-    answer = np.array([int(b_1), int(b_2), int(b_3)])
+    matrix = np.array([[a_11, a_12, a_13], [a_21, a_22, a_23], [a_31, a_32, a_33]])
+    answer = np.array([b_1, b_2, b_3])
 
     unknowns = np.linalg.solve(matrix, answer)
+
     fitted_img = np.zeros((height, width, 1), np.uint8)
     final_img = np.zeros((height, width, 1), np.uint8)
-    for i in range(0, height):
-        for j in range(0, width):
+
+    for j in range(0, width):
+        for i in range(0, height):
             fitted_img[i, j] = unknowns[0] + unknowns[1]*(i+1) + unknowns[2]*(j+1)
-            if img[i, j] >= fitted_img[i, j]:
+
+    for j in range(0, width):
+        for i in range(0, height):
+            if img[i, j] >= fitted_img[i, j] - 20:
                 final_img[i, j] = 255
             else:
                 final_img[i, j] = 0
+
     return final_img, fitted_img
 
 
 def main():
-    img = cv2.imread('../images/tables.png')
+    img = cv2.imread('../images/shadowed_page.png')
+    # img = np.zeros((300, 300, 3), np.uint8)
+    # for i in range(0, 300):
+    #     for j in range(0, 300):
+    #         img[i, j] = 30.0 + 0.1 * i + 0.7 * j
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
