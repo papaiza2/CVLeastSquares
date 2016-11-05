@@ -12,24 +12,8 @@ def adaptive_threshold(img, type='adaptive'):
 
 
 def _mean_thresholding(img):
-    sum = 0
-    height, width = img.shape[0], img.shape[1]
-    for row in range(0, height):
-        for col in range(0, width):
-            sum += img[row, col]
-    mean = sum/(width*height)
-    return threshold(img, mean)
-
-
-def threshold(img, mean):
-    height, width = img.shape[0], img.shape[1]
-    new_img = np.zeros((height, width, 3), np.uint8)
-    for row in range(0, height):
-        for col in range(0, width):
-            if img[row, col] >= mean:
-                new_img[row, col] = 255
-            else:
-                new_img[row, col] = 0
+    mean = cv2.mean(img)[0]
+    ret, new_img = cv2.threshold(img, mean, 255, cv2.THRESH_BINARY)
     return new_img
 
 
@@ -54,51 +38,52 @@ def _least_squares_thresholding(img):
 
     a_31 = a_13 = float(width*(width + 1)/2) * height
     a_33 = float(width * (width + 1) * (2*width + 1)/6) * height
+    a_32 = a_23 = float((height*(height + 1)/2) * (width*(width + 1)/2))
+
+    b_1 = float(cv2.sumElems(img)[0])
+    b_2 = float(height*(height + 1)/2 * b_1)
+    b_3 = float(width*(width + 1)/2 * b_1)
+    b_11 = b_22 = b_33 = 0.0
 
     for j in range(0, width):
         for i in range(0, height):
-            b_1 += float(img[i, j])
-            b_2 += float((i + 1) * img[i, j])
-            b_3 += float((j + 1) * img[i, j])
-    a_32 = a_23 = float((height*(height + 1)/2) * (width*(width + 1)/2))
+            b_11 += float(img[i, j])
+            b_22 += float((i + 1) * img[i, j])
+            b_33 += float((j + 1) * img[i, j])
 
     matrix = np.array([[a_11, a_12, a_13], [a_21, a_22, a_23], [a_31, a_32, a_33]])
-    answer = np.array([b_1, b_2, b_3])
+    answer = np.array([b_11, b_22, b_33])
 
     unknowns = np.linalg.solve(matrix, answer)
 
-    fitted_img = np.zeros((height, width, 1), np.uint8)
-    final_img = np.zeros((height, width, 1), np.uint8)
+    fitted_img = np.zeros((height, width), np.uint8)
+    final_img = np.zeros((height, width), np.uint8)
 
     for j in range(0, width):
         for i in range(0, height):
-            fitted_img[i, j] = unknowns[0] + unknowns[1]*(i+1) + unknowns[2]*(j+1)
+            fitted_img[i, j] = unknowns[0] + unknowns[1]*(i) + unknowns[2]*(j)
 
     for j in range(0, width):
         for i in range(0, height):
-            if img[i, j] >= fitted_img[i, j] - 20:
+            if img[i, j] > fitted_img[i, j]:
                 final_img[i, j] = 255
             else:
                 final_img[i, j] = 0
 
-    return final_img, fitted_img
+    return fitted_img, final_img
 
 
 def main():
     img = cv2.imread('../images/shadowed_page.png')
-    # img = np.zeros((300, 300, 3), np.uint8)
-    # for i in range(0, 300):
-    #     for j in range(0, 300):
-    #         img[i, j] = 30.0 + 0.1 * i + 0.7 * j
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    mean_image, new_image = adaptive_threshold(gray, type='adaptive')
+    thresh, new_image = adaptive_threshold(gray, type='adaptive')
 
     # Display the resulting frame
     cv2.imshow("Gray", gray)
-    cv2.imshow('Mean Image', mean_image)
-    cv2.imshow('Threshold Image', new_image)
+    cv2.imshow('Thresh', thresh)
+    cv2.imshow('New', new_image)
     cv2.waitKey(0)
 
     cv2.destroyAllWindows()
