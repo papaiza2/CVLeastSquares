@@ -42,14 +42,11 @@ def _least_squares_thresholding(img):
     a_32 = a_23 = float((height*(height + 1)/2) * (width*(width + 1)/2))
 
     b_1 = float(cv2.sumElems(img)[0])
-    # b_2 = float(height*(height + 1)/2 * b_1)
-    # b_3 = float(width*(width + 1)/2 * b_1)
 
-    for j in range(0, width):
-        for i in range(0, height):
-            b_2 += float((i + 1) * img[i, j])
-            b_3 += float((j + 1) * img[i, j])
-
+    i_matrix = np.dot(np.arange(1, height+1).reshape(height, 1), np.ones((1, width)))
+    j_matrix = np.dot(np.ones((height, 1)), np.arange(1, width + 1).reshape(1, width))
+    b_2 = cv2.sumElems(np.multiply(i_matrix, img))[0]
+    b_3 = cv2.sumElems(np.multiply(j_matrix, img))[0]
 
     matrix = np.array([[a_11, a_12, a_13], [a_21, a_22, a_23], [a_31, a_32, a_33]])
     answer = np.array([b_1, b_2, b_3])
