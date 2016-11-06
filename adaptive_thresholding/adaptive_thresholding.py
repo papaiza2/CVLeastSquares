@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import itertools
 
 
 def adaptive_threshold(img, type='adaptive'):
@@ -53,38 +52,37 @@ def _least_squares_thresholding(img):
 
     unknowns = np.linalg.solve(matrix, answer)
 
-    fitted_img = np.zeros((height, width), np.uint8)
-    final_img = np.zeros((height, width), np.uint8)
-
     first = np.dot((unknowns[1] * np.arange(1, height + 1)).reshape(height, 1), np.ones((1, width)))
     second = np.dot(np.ones((height, 1)), (unknowns[2] * np.arange(1, width+1)).reshape(1, width))
-    fitted_img = abs(unknowns[0] + np.add(first, second))
+    fitted_img = unknowns[0] + np.add(first, second)
 
-    for i, j in itertools.product(range(height), range(width)):
-        # fitted_img[i, j] = unknowns[0] + unknowns[1] * (i + 1) + unknowns[2] * (j + 1)
-        if img[i, j] + 15 > fitted_img[i, j]:
-            final_img[i, j] = 255
-        else:
-            final_img[i, j] = 0
-    # final_img = cv2.absdiff(img, fitted_img.astype(np.uint8))
-
+    final_img = cv2.absdiff(img + 235, fitted_img.astype(np.uint8))
+    final_img = 255 - final_img
+    ret, final_img = cv2.threshold(final_img, 215, 255, cv2.THRESH_BINARY)
     return fitted_img, final_img
 
 
 def main():
-    # cap = cv2.VideoCapture(0)
-    # while(True):
-    img = cv2.imread('../images/shadowed_page.png')
-    # ret, frame = cap.read()
-    # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    thresh, new_image = adaptive_threshold(gray, type='adaptive')
+    # For image
 
-    # Display the resulting frame
-    # cv2.imshow("Gray", gray)
-    # cv2.imshow('Thresh', thresh)
-    cv2.imshow('New', new_image)
+    # img = cv2.imread('../images/tables.png')
+    # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # thresh, new_image = adaptive_threshold(gray, type='adaptive')
+    # mean = adaptive_threshold(gray, type='mean')
+    # cv2.imshow('Mean', mean)
+    # cv2.imshow('Adaptive', new_image)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+
+    # For camera
+
+    cap = cv2.VideoCapture(0)
+    while (True):
+        ret, frame = cap.read()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        thresh, new_image = adaptive_threshold(gray, type='adaptive')
+        cv2.imshow('New', new_image)
     cv2.waitKey(0)
 
     cv2.destroyAllWindows()
