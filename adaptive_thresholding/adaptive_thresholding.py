@@ -66,7 +66,7 @@ def main():
 
     # For image
 
-    # img = cv2.imread('../images/tables.png')
+    # img = cv2.imread('../images/shadowed_page.png')
     # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # thresh, new_image = adaptive_threshold(gray, type='adaptive')
     # mean = adaptive_threshold(gray, type='mean')
@@ -78,6 +78,9 @@ def main():
     # For camera
 
     cap = cv2.VideoCapture(0)
+    cap.set(3, 640)
+    cap.set(4, 480)
+    cap.set(15, 0.1)
     while (True):
         ret, frame = cap.read()
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
